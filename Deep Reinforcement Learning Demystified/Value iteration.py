@@ -4,19 +4,21 @@ https://medium.com/@m.alzantot/deep-reinforcement-learning-demysitifed-episode-2
 '''
 
 import gym
-import random
 import numpy as np
 
 
+def random_policy(env):
+    policy = [np.random.randint(0, env.env.nA) for _ in range(env.env.nS)]
+    return policy
+
 def value_iteration(env, gamma=1.0, eps=1e-20, max_iterations=100000):
-    V = np.zeros(env.nS)
-    Q = np.zeros((env.nS, env.nA))
+    V = np.zeros(env.env.nS)
+    Q = np.zeros((env.env.nS, env.env.nA))
     for i in range(max_iterations):
         old_V = np.copy(V)
-        for s in range(env.nS):
-            for a in range(env.nA):
-                env.P[s][a][0]
-                Q[s][a] = gamma * sum(r/gamma + p * V[s_] for p, s_, r, _ in env.P[s][a])
+        for s in range(env.env.nS):
+            for a in range(env.env.nA):
+                Q[s][a] = gamma * sum(r/gamma + p * V[s_] for p, s_, r, _ in env.env.P[s][a])
             V[s] = max(Q[s])
         if np.sum(np.fabs(V - old_V)) < eps:
             print('Value iteration done with {} iterations.'.format(i))
@@ -24,7 +26,7 @@ def value_iteration(env, gamma=1.0, eps=1e-20, max_iterations=100000):
     return V, Q
 
 def extract_policy(env, Q):
-    policy = [np.argmax(Q[s]) for s in range(env.nS)]
+    policy = [np.argmax(Q[s]) for s in range(env.env.nS)]
     return policy
 
 def evaluate_policy(env, policy, n=1000):
@@ -32,6 +34,10 @@ def evaluate_policy(env, policy, n=1000):
     for _ in range(n):
         success += run_episode(env, policy)
     print('Our policy performs well in {}% of times.'.format(success/n*100))
+    success = 0
+    for _ in range(n):
+        success += run_episode(env, random_policy(env))
+    print('Just comparing, random policy performs well in {}% of times.'.format(success/n*100))
 
 def run_episode(env, policy, render=False, max_iterations=10000000):
     obs = env.reset()
@@ -47,7 +53,6 @@ def run_episode(env, policy, render=False, max_iterations=10000000):
 
 if __name__ == '__main__':
     env = gym.make('FrozenLake8x8-v0')
-    env.env.P
     V, Q = value_iteration(env)
     opt_policy = extract_policy(env, Q)
     evaluate_policy(env, opt_policy)
