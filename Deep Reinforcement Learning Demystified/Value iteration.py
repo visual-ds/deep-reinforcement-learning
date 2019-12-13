@@ -11,7 +11,7 @@ def random_policy(env):
     policy = [np.random.randint(0, env.env.nA) for _ in range(env.env.nS)]
     return policy
 
-def value_iteration(env, gamma=1.0, eps=1e-20, max_iterations=100000):
+def value_iteration(env, gamma=0.99, eps=1e-20, max_iterations=100000):
     V = np.zeros(env.env.nS)
     Q = np.zeros((env.env.nS, env.env.nA))
     for i in range(max_iterations):
@@ -23,30 +23,35 @@ def value_iteration(env, gamma=1.0, eps=1e-20, max_iterations=100000):
         if np.sum(np.fabs(V - old_V)) < eps:
             print('Value iteration done with {} iterations.'.format(i))
             break
+        elif i % 100 == 0:
+            evaluate_policy(env, extract_policy(env, Q),
+            text='Our policy is performing well in {}% of times, with ' + str(i) + ' iterations.',
+            comparison=False)
     return V, Q
 
 def extract_policy(env, Q):
     policy = [np.argmax(Q[s]) for s in range(env.env.nS)]
     return policy
 
-def evaluate_policy(env, policy, n=1000):
+def evaluate_policy(env, policy, n=1000, text='Our policy performs well in {}% of times.', comparison=True):
     success = 0
     for _ in range(n):
         success += run_episode(env, policy)
-    print('Our policy performs well in {}% of times.'.format(success/n*100))
-    success = 0
-    for _ in range(n):
-        success += run_episode(env, random_policy(env))
-    print('Just comparing, random policy performs well in {}% of times.'.format(success/n*100))
+    print(text.format(success/n*100))
+    if comparison:
+        success = 0
+        for _ in range(n):
+            success += run_episode(env, random_policy(env))
+        print('Just comparing, random policy performs well in {}% of times.'.format(success/n*100))
 
-def run_episode(env, policy, render=False, max_iterations=10000000):
+def run_episode(env, policy, render1=False, render2=False, max_iterations=10000000):
     obs = env.reset()
     for _ in range(max_iterations):
-        if render:
+        if render1:
             env.render()
         obs, reward, done, _ = env.step(policy[obs])
         if done:
-            if render:
+            if render2:
                 env.render()
             return reward
     return 0
@@ -56,4 +61,5 @@ if __name__ == '__main__':
     V, Q = value_iteration(env)
     opt_policy = extract_policy(env, Q)
     evaluate_policy(env, opt_policy)
-    run_episode(env, opt_policy, render=True)
+    print("An example:")
+    run_episode(env, opt_policy, render2=True)
