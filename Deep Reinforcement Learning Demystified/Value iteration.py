@@ -18,7 +18,7 @@ def value_iteration(env, gamma=0.99, eps=1e-20, max_iterations=100000):
         old_V = np.copy(V)
         for s in range(env.env.nS):
             for a in range(env.env.nA):
-                Q[s][a] = gamma * sum(r/gamma + p * V[s_] for p, s_, r, _ in env.env.P[s][a])
+                Q[s][a] = sum(p * (gamma * old_V[s_] + r) for p, s_, r, _ in env.env.P[s][a])
             V[s] = max(Q[s])
         if np.sum(np.fabs(V - old_V)) < eps:
             print('Value iteration done with {} iterations.'.format(i))
