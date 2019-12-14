@@ -14,29 +14,47 @@ def random_policy(env):
     return policy
 
 def calculate_V_policy(env, policy, gamma, eps=1e-10, max_iterations=10000):
+    '''
+    It calculates the value function (under our policy) iteratively.
+    It could be done solving the linear equations proposed in the inspired article (on the top).
+    '''
+
     V_policy = np.zeros(env.env.nS)
+
     for _ in range(max_iterations):
         old_V_policy = np.copy(V_policy)
         for s in range(env.env.nS):
             V_policy[s] = sum(p * (gamma * old_V_policy[s_] + r) for p, s_, r, _ in env.env.P[s][policy[s]])
         if np.sum(np.fabs(old_V_policy - V_policy)) < eps:
             break
+
     return V_policy
 
 def extract_policy(env, V_policy, gamma):
+    '''
+    Extract the policy from the value function (under the policy).
+    '''
+
     aux = np.zeros((env.env.nS, env.env.nA))
     policy_ = np.zeros(env.env.nS, dtype=np.int8)
+
     for s in range(env.env.nS):
         for a in range(env.env.nA):
             aux[s][a] = sum(p * (gamma * V_policy[s_] + r) for p, s_, r, _ in env.env.P[s][a])
         policy_[s] = np.argmax(aux[s])
+
     return policy_
 
 def evaluate_policy(env, policy, n=1000, text='Our policy performs well in {}% of times.', comparison=True):
+    '''
+    Evaluate the policy computing the percent of times it wins.
+    '''
+
     success = 0
     for _ in range(n):
         success += run_episode(env, policy)
     print(text.format(success/n*100))
+
     if comparison:
         success = 0
         random_policy_ = random_policy(env)
@@ -45,7 +63,12 @@ def evaluate_policy(env, policy, n=1000, text='Our policy performs well in {}% o
         print('Just comparing, random policy performs well in {}% of times.'.format(success/n*100))
 
 def run_episode(env, policy, render1=False, render2=False, max_iterations=10000000):
+    '''
+    Run one episode with the specified policy.
+    '''
+
     obs = env.reset()
+
     for _ in range(max_iterations):
         if render1:
             env.render()
@@ -54,10 +77,17 @@ def run_episode(env, policy, render1=False, render2=False, max_iterations=100000
             if render2:
                 env.render()
             return reward
+            
     return 0
 
 def policy_iteration(env, gamma=0.99, max_iterations=10000):
+    '''
+    Policy iteration algorithm.
+    It finds the optimal policy and value function iteratively.
+    '''
+
     policy_ = random_policy(env)
+
     for i in range(max_iterations):
         policy = np.copy(policy_)
         V_policy = calculate_V_policy(env, policy, gamma)
@@ -65,8 +95,10 @@ def policy_iteration(env, gamma=0.99, max_iterations=10000):
         if np.all(policy == policy_):
             break
         elif i % 1 == 0:
+            # Evaluate our policy during iteration.
             evaluate_policy(env, policy_, text='Our policy is performing well in {}% of times, after iteration ' + str(i) + '.',
             comparison=False)
+
     return policy_
 
 

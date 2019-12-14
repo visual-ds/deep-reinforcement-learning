@@ -52,7 +52,7 @@ def extract_policy(env, Q):
 
 def evaluate_policy(env, policy, n=1000, text='Our policy performs well in {}% of times.', comparison=True):
     '''
-    Evaluate the policy computing the percent of times it reaches the end.
+    Evaluate the policy computing the percent of times it wins.
     '''
 
     success = 0
@@ -72,6 +72,7 @@ def run_episode(env, policy, render1=False, render2=False, max_iterations=100000
     '''
 
     obs = env.reset()
+    
     for _ in range(max_iterations):
         if render1:
             env.render()
@@ -80,6 +81,7 @@ def run_episode(env, policy, render1=False, render2=False, max_iterations=100000
             if render2:
                 env.render()
             return reward
+
     return 0
 
 if __name__ == '__main__':
