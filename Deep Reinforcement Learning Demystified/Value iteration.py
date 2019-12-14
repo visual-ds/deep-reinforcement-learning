@@ -14,34 +14,52 @@ def random_policy(env):
     return policy
 
 def value_iteration(env, gamma=0.99, eps=1e-20, max_iterations=100000):
+    '''
+    Value iteration algorithm.
+    It finds the optimals Q and value functions.
+    '''
+
     V = np.zeros(env.env.nS)
     Q = np.zeros((env.env.nS, env.env.nA))
+
     for i in range(max_iterations):
         old_V = np.copy(V)
         for s in range(env.env.nS):
             for a in range(env.env.nA):
+                # Bellman equation
                 Q[s][a] = sum(p * (gamma * old_V[s_] + r) for p, s_, r, _ in env.env.P[s][a])
             V[s] = max(Q[s])
         if np.sum(np.fabs(V - old_V)) < eps:
             print('Value iteration done with {} iterations.'.format(i))
             break
         elif i % 100 == 0:
+            # This evaluate our policy during iteration, just for analysis.
             evaluate_policy(env, extract_policy(env, Q),
             text='Our policy is performing well in {}% of times, with ' + str(i) + ' iterations.',
             comparison=False)
+
     return V, Q
 
 def extract_policy(env, Q):
+    '''
+    Extract policy from Q function.
+    '''
+
     policy = np.zeros(env.env.nS, dtype=np.int8)
     for s in range(env.env.nS):
         policy[s] = np.argmax(Q[s])
     return policy
 
 def evaluate_policy(env, policy, n=1000, text='Our policy performs well in {}% of times.', comparison=True):
+    '''
+    Evaluate the policy computing the percent of times it reaches the end.
+    '''
+
     success = 0
     for _ in range(n):
         success += run_episode(env, policy)
     print(text.format(success/n*100))
+
     if comparison:
         success = 0
         for _ in range(n):
@@ -49,6 +67,10 @@ def evaluate_policy(env, policy, n=1000, text='Our policy performs well in {}% o
         print('Just comparing, random policy performs well in {}% of times.'.format(success/n*100))
 
 def run_episode(env, policy, render1=False, render2=False, max_iterations=10000000):
+    '''
+    Run one episode with the specified policy.
+    '''
+
     obs = env.reset()
     for _ in range(max_iterations):
         if render1:
