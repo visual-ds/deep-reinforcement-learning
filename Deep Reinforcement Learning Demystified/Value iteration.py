@@ -8,7 +8,9 @@ import numpy as np
 
 
 def random_policy(env):
-    policy = [np.random.randint(0, env.env.nA) for _ in range(env.env.nS)]
+    policy = np.zeros(env.env.nS)
+    for s in range(env.env.nS):
+        policy[s] = np.random.randint(0, env.env.nA)
     return policy
 
 def value_iteration(env, gamma=0.99, eps=1e-20, max_iterations=100000):
@@ -30,7 +32,9 @@ def value_iteration(env, gamma=0.99, eps=1e-20, max_iterations=100000):
     return V, Q
 
 def extract_policy(env, Q):
-    policy = [np.argmax(Q[s]) for s in range(env.env.nS)]
+    policy = np.zeros(env.env.nS, dtype=np.int8)
+    for s in range(env.env.nS):
+        policy[s] = np.argmax(Q[s])
     return policy
 
 def evaluate_policy(env, policy, n=1000, text='Our policy performs well in {}% of times.', comparison=True):
