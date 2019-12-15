@@ -5,7 +5,33 @@ https://medium.com/@m.alzantot/deep-reinforcement-learning-demysitifed-episode-2
 
 import gym
 import numpy as np
+import os
+import pickle
 
+
+def main():
+    
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--run', action='store_true')
+    args = parser.parse_args()
+
+    env = gym.make('MountainCar-v0')
+    if args.run:
+        with open('Q-learning.pkl', 'rb') as f:
+            policy = pickle.load(f)
+    else:
+        env.seed(0)
+        np.random.seed(0)    
+        policy = np.zeros((40, 40))
+        Q = np.zeros((40, 40, 3))
+        Q = q_learning(env, Q)
+        policy = extract_policy(env, Q)
+        save_policy(policy)
+    scores = [run_episode(env, policy) for _ in range(100)]
+    print('The average total reward of our policy is {}.'.format(np.mean(scores)))
+    for _ in range(5):
+        run_episode(env, policy, render=True)
 
 def run_episode(env, policy=None, max_iterations=100000, render=False):
     obs = env.reset()
@@ -20,7 +46,8 @@ def run_episode(env, policy=None, max_iterations=100000, render=False):
             env.render()
         if done:
             break
-
+        
+    env.close()
     return total_reward
 
 def obs_to_state(env, obs):
@@ -80,15 +107,10 @@ def take_action(env, s0, s1, Q):
         a = np.random.choice(env.action_space.n, p=probs)
     return a
 
+def save_policy(policy):
+    with open('Q-learning.pkl', 'wb') as f:
+        pickle.dump(policy, f, pickle.HIGHEST_PROTOCOL)   
+
 
 if __name__ == '__main__':
-    env = gym.make('MountainCar-v0')
-    env.seed(0)
-    np.random.seed(0)
-    Q = np.zeros((40, 40, 3))
-    Q = q_learning(env, Q)
-    policy = extract_policy(env, Q)
-    scores = [run_episode(env, policy) for _ in range(100)]
-    print('The average total reward of our policy is {}.'.format(np.mean(scores)))
-    for _ in range(5):
-        run_episode(env, policy, render=True)
+    main()
