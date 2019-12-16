@@ -14,6 +14,7 @@ def main():
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('--run', action='store_true')
+    # Just run the saved file
     args = parser.parse_args()
 
     env = gym.make('MountainCar-v0')
@@ -34,6 +35,10 @@ def main():
         run_episode(env, policy, render=True)
 
 def run_episode(env, policy=None, max_iterations=100000, render=False):
+    '''
+    Run one episode for the policy.
+    '''
+
     obs = env.reset()
     total_reward = 0
     
@@ -51,10 +56,20 @@ def run_episode(env, policy=None, max_iterations=100000, render=False):
     return total_reward
 
 def obs_to_state(env, obs):
+    '''
+    Because observations are continuous, we've discretized it.
+    So, we convert it to integer numbers.
+    '''
+
     s = np.int8(np.floor(40 * (obs - env.env.low) / (env.env.high - env.env.low)))
     return s[0], s[1]
 
 def q_learning(env, Q, max_iterations1=100000, max_iterations2=10000, gamma=1.0):
+    '''
+    Q-learning algorithm.
+    It learns the Q function without knowing the transition probabilities.
+    '''
+
     total_reward = 0
     for i in range(max_iterations2):
         obs = env.reset()
@@ -90,6 +105,10 @@ def extract_policy(env, Q):
     return policy
 
 def evaluate_policy(env, Q):
+    '''
+    It evaluates our policy running it several times and checking in which it succeds.
+    '''
+
     policy = extract_policy(env, Q)
     R = 0
     for _ in range(100):
@@ -98,7 +117,12 @@ def evaluate_policy(env, Q):
     print('The average total reward of this policy is {}.'.format(R))
 
 def take_action(env, s0, s1, Q):
+    '''
+    Take one action during Q-learning, based on our current Q function.
+    '''
+
     if np.random.uniform(0, 1) < 0.02:
+        # With small prob., take a random action
         a = np.random.choice(env.action_space.n)
     else:
         logits = Q[s0][s1]
@@ -108,6 +132,10 @@ def take_action(env, s0, s1, Q):
     return a
 
 def save_policy(policy):
+    '''
+    Save the policy in a file, allowing to run it later.
+    '''
+
     with open('Q-learning.pkl', 'wb') as f:
         pickle.dump(policy, f, pickle.HIGHEST_PROTOCOL)   
 
