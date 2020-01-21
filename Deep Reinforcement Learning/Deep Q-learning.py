@@ -8,13 +8,14 @@ import pickle
 
 class NeuralNetwork():
     def __init__(self, obs_size, action_size):
-        self.input_size = obs_size + action_size
+        self.obs_size = obs_size
+        self.action_size = action_size
         self.model_of_network()
 
     def model_of_network(self):
         self.model = Sequential()
-        self.model.add(Dense(units=int(np.ceil(1.2*self.input_size)), input_shape=(self.input_size,), activation='relu'))
-        self.model.add(Dense(units=1))
+        self.model.add(Dense(units=int(np.ceil(1.2*self.obs_size)), input_shape=(self.obs_size,), activation='relu'))
+        self.model.add(Dense(units=self.action_size))
         self.model.compile(loss='mse', optimizer='adam')
 
 
@@ -23,14 +24,13 @@ class Agent():
         self.env = gym.make(env_name)
         self.env.seed(0)
         np.random.seed(0)    
-        self.policy = np.zeros((40, 40))
-        self.Q = np.zeros((40, 40, 3))
         self.gamma = 1.0
 
         self.obs_size = self.env.env.observation_space.shape[0]
         self.action_size = self.env.env.action_space.n
-
-        self.neural_network = NeuralNetwork(self.obs_size, self.action_size)
+        self.epsilon = 1.0
+        self.iterations = 0
+        self.replay_memory_capacity = 1000000
 
     def read_policy(self, policy_path):
         '''
@@ -47,28 +47,32 @@ class Agent():
 
         self.deep_q_learning()
 
-    def deep_q_learning(self, n_episodes=1000, max_iterations=100000):
+    def deep_q_learning(self, n_episodes=10000, max_iterations=100000):
         '''
         Deep Q-learning.
         It learns the Q function without knowing the transition probabilities, through deep neural networks.
         '''
 
-        for episode in range(n_episodes):
-            if episode%100 == 0:
-                self.test()
+        self.replay_memory = []
+        self.neural_network = NeuralNetwork(self.obs_size, self.action_size)
 
+        for episode in range(n_episodes):
             obs = self.env.reset()
-            batch = []
+            state = self.normalize_obs(obs)
             for _ in range(max_iterations):
-                state = self.normalize_obs(obs)
+                if self.iterations%10000 == 0:
+                    self.test()
                 action = self.take_action(state)
                 obs, reward, done, _ = self.env.step(action)
                 state_ = self.normalize_obs(obs)
-                batch.append([state, action, reward, state_])
+                self.append_replay_memory([state, action, reward, state_])
+                experience = self.sample_experience()
+                y = self.set_target(experience, done)
+                self.update_network(y, experience)
+                self.iterations += 1
+                state = state_
                 if done:
                     break
-
-            self.update_network(batch)
 
         self.env.close()
             
@@ -81,28 +85,54 @@ class Agent():
         state = (obs - self.env.env.low) / (self.env.env.high - self.env.env.low)
         return state
             
-    def take_action(self, state, epsilon=0.02):
+    def take_action(self, state):
         '''
         Take action based in epsilon greedy algorithm.
         With small probabily, take a random action;
         otherwise, take the action from the neural network.
         '''
 
-        if np.random.rand() < epsilon:
+        # Epsilon-greedy algorithm
+        if self.iterations <= 1000000:
+            self.epsilon = -9e-7 * self.iterations + 1
+        else:
+            self.epsilon = 0.1
+
+        if np.random.rand() < self.epsilon:
             action = np.random.choice(self.env.action_space.n)
         else:
             output = self.compute_values(state)
             action = np.argmax(output)
         return action
 
-    def update_network(self, batch):
-        '''
-        Update neural network from batch.
-        batch = [[state, action, reward, state_], ..., [state, action, reward, state_]]
-        '''
+    def append_replay_memory(self, experience):
+        """Append replay memory with experience."""
+        if len(self.replay_memory) >= self.replay_memory_capacity:
+            self.replay_memory.pop(0)
+        self.replay_memory.append(experience)
 
-        input_batch, target_batch = self.get_input_and_target(batch)
-        self.neural_network.model.fit(input_batch, target_batch, verbose=0, epochs=300)
+    def sample_experience(self):
+        """Sample experience from replay memory."""
+        return self.replay_memory[np.random.choice(len(self.replay_memory))]
+
+    def set_target(self, experience, done):
+        """Set target for neural network update."""
+        state, action, reward, state_ = experience
+        if done:
+            return reward
+        max_Q = np.max(self.compute_values(state_))
+        return reward + self.gamma*max_Q
+
+    def update_network(self, y, experience):
+        """Update neural network from replay_memory."""
+        state, action, reward, state_ = experience
+        input_ = state[None, :]
+        target = self.neural_network.model.predict(input_)
+        target[0, action] = y
+        self.neural_network.model.fit(input_, target, verbose=0)
+
+        # input_batch, target_batch = self.get_input_and_target(batch)
+        # self.neural_network.model.fit(input_batch, target_batch, verbose=0, epochs=300)
 
     def get_input_and_target(self, batch):
         '''
@@ -138,14 +168,17 @@ class Agent():
         Compute values of a state.
         '''
 
-        output = []
-        for action in range(self.action_size):
-            action_array = np.zeros(self.action_size)
-            action_array[action] = 1
-            input = np.concatenate((state, action_array))
-            logits = self.neural_network.model.predict(input[None, :])
-            output.append(logits[0, 0])
-        return output
+        logits = self.neural_network.model.predict(state[None, :])
+        return logits[0, :]
+
+        # output = []
+        # for action in range(self.action_size):
+        #     action_array = np.zeros(self.action_size)
+        #     action_array[action] = 1
+        #     input = np.concatenate((state, action_array))
+        #     logits = self.neural_network.model.predict(input[None, :])
+        #     output.append(logits[0, 0])
+        # return output
 
     def save_network(self, network_path):
         '''
