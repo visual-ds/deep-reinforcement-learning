@@ -1,22 +1,27 @@
+from collections import deque
 from keras.layers import Dense
 from keras.models import Sequential
+from keras.optimizers import Adam
 import gym
 import numpy as np
 import os
 import pickle
+import random
 
 
 class NeuralNetwork():
     def __init__(self, obs_size, action_size):
         self.obs_size = obs_size
         self.action_size = action_size
+        self.learning_rate = 0.001
         self.model_of_network()
 
     def model_of_network(self):
         self.model = Sequential()
-        self.model.add(Dense(units=int(np.ceil(1.2*self.obs_size)), input_shape=(self.obs_size,), activation='relu'))
-        self.model.add(Dense(units=self.action_size))
-        self.model.compile(loss='mse', optimizer='adam')
+        self.model.add(Dense(units=24, input_shape=(self.obs_size,), activation='relu'))
+        self.model.add(Dense(units=48, activation='relu'))
+        self.model.add(Dense(units=self.action_size, activation='linear'))
+        self.model.compile(loss='mse', optimizer=Adam(lr=self.learning_rate))
 
 
 class Agent():
@@ -25,12 +30,17 @@ class Agent():
         self.env.seed(0)
         np.random.seed(0)    
         self.gamma = 1.0
-
+        self.n_episodes = 500
+        self.max_iterations = 200
         self.obs_size = self.env.env.observation_space.shape[0]
         self.action_size = self.env.env.action_space.n
         self.epsilon = 1.0
-        self.iterations = 0
-        self.replay_memory_capacity = 1000000
+        self.epsilon_decay = 0.05
+        self.epsilon_min = 0.01
+        self.epsilon_max_iterations = 1000
+        self.replay_memory_capacity = 20000
+        self.n_epochs = 100
+        self.minibatch_size = 32
 
     def read_policy(self, policy_path):
         '''
@@ -47,34 +57,69 @@ class Agent():
 
         self.deep_q_learning()
 
-    def deep_q_learning(self, n_episodes=10000, max_iterations=100000):
+    def deep_q_learning(self):
         '''
         Deep Q-learning.
         It learns the Q function without knowing the transition probabilities, through deep neural networks.
         '''
 
-        self.replay_memory = []
+        self.replay_memory = deque(maxlen=self.replay_memory_capacity)
         self.neural_network = NeuralNetwork(self.obs_size, self.action_size)
 
-        for episode in range(n_episodes):
-            obs = self.env.reset()
-            state = self.normalize_obs(obs)
-            for _ in range(max_iterations):
-                if self.iterations%10000 == 0:
-                    self.test()
-                action = self.take_action(state)
-                obs, reward, done, _ = self.env.step(action)
-                state_ = self.normalize_obs(obs)
-                self.append_replay_memory([state, action, reward, state_])
-                experience = self.sample_experience()
-                y = self.set_target(experience, done)
-                self.update_network(y, experience)
-                self.iterations += 1
-                state = state_
-                if done:
-                    break
+        for episode in range(self.n_episodes):
+            self.train_episode(episode)
 
         self.env.close()
+
+    def train_episode(self, episode):
+        obs = self.env.reset()
+        state = obs#self.normalize_obs(obs)
+        total_reward = 0
+        for i in range(self.max_iterations):
+            action = self.take_action(state)
+            obs, reward, done, _ = self.env.step(action)
+            state_ = obs#self.normalize_obs(obs)
+            self.replay_memory.append([state, action, reward, state_, done])
+            self.train_from_replay()
+            # experience = self.sample_experience()
+            # y = self.set_target(experience, done)
+            # self.update_network(y, experience)
+            state = state_
+            total_reward += reward
+            if done:
+                break
+        result = 'FAIL'
+        if i < 199:
+            result = 'SUCESS'
+        print('Ep. {}: {}. Reward = {} and epsilon = {}.'.format(episode, result, total_reward, self.epsilon), end='\n\n')
+        self.epsilon -= self.epsilon_decay
+        self.epsilon = np.max([self.epsilon, self.epsilon_min])
+
+    def train_from_replay(self):
+        if len(self.replay_memory) < self.minibatch_size:
+            return
+        minibatch = random.sample(self.replay_memory, self.minibatch_size)
+        states = []
+        targets = []
+        for sample in minibatch:
+            state, action, reward, state_, done = sample
+            states.append(state)
+            target = self.compute_values(state)
+            if done:
+                target[action] = reward
+            else:
+                target[action] = reward + self.gamma*np.max(self.compute_values(state_))
+            targets.append(target)
+
+        states = np.array(states)
+        targets = np.array(targets)
+
+        self.neural_network.model.fit(
+            x=states,
+            y=targets,
+            verbose=0
+        )
+
             
     def normalize_obs(self, obs):
         '''
@@ -91,25 +136,12 @@ class Agent():
         With small probabily, take a random action;
         otherwise, take the action from the neural network.
         '''
-
-        # Epsilon-greedy algorithm
-        if self.iterations <= 1000000:
-            self.epsilon = -9e-7 * self.iterations + 1
-        else:
-            self.epsilon = 0.1
-
         if np.random.rand() < self.epsilon:
             action = np.random.choice(self.env.action_space.n)
         else:
             output = self.compute_values(state)
             action = np.argmax(output)
         return action
-
-    def append_replay_memory(self, experience):
-        """Append replay memory with experience."""
-        if len(self.replay_memory) >= self.replay_memory_capacity:
-            self.replay_memory.pop(0)
-        self.replay_memory.append(experience)
 
     def sample_experience(self):
         """Sample experience from replay memory."""
@@ -129,39 +161,7 @@ class Agent():
         input_ = state[None, :]
         target = self.neural_network.model.predict(input_)
         target[0, action] = y
-        self.neural_network.model.fit(input_, target, verbose=0)
-
-        # input_batch, target_batch = self.get_input_and_target(batch)
-        # self.neural_network.model.fit(input_batch, target_batch, verbose=0, epochs=300)
-
-    def get_input_and_target(self, batch):
-        '''
-        Get input and target for training neural network.
-        '''
-
-        input_batch = np.empty((0, self.obs_size+self.action_size))
-        target_batch = np.empty((0, 1))
-
-        for experience in batch:
-            state, action, reward, state_ = experience
-            action_array = np.zeros(self.action_size)
-            action_array[action] = 1
-            input = np.concatenate((state, action_array))
-            input_batch = np.append(input_batch, input[None, :], axis=0)
-
-            target = np.array([[reward + self.gamma*self.value(state_)]])
-            target_batch = np.append(target_batch, target, axis=0)
-        
-        return input_batch, target_batch
-
-    def value(self, state):
-        '''
-        Get value of a state. It's the maximum of the values of the state.
-        '''
-
-        output = self.compute_values(state)
-        value = np.max(output)
-        return value
+        self.neural_network.model.fit(input_, target, verbose=0, epochs=self.n_epochs)
 
     def compute_values(self, state):
         '''
@@ -171,15 +171,6 @@ class Agent():
         logits = self.neural_network.model.predict(state[None, :])
         return logits[0, :]
 
-        # output = []
-        # for action in range(self.action_size):
-        #     action_array = np.zeros(self.action_size)
-        #     action_array[action] = 1
-        #     input = np.concatenate((state, action_array))
-        #     logits = self.neural_network.model.predict(input[None, :])
-        #     output.append(logits[0, 0])
-        # return output
-
     def save_network(self, network_path):
         '''
         Save the network in order to run it faster.
@@ -187,14 +178,6 @@ class Agent():
 
         with open(network_path, 'wb') as f:
             pickle.dump(self.neural_network.model, f, pickle.HIGHEST_PROTOCOL)
-
-    def save_policy(self, policy_path):
-        '''
-        Save the policy in a file, allowing to run it later.
-        '''
-
-        with open(policy_path, 'wb') as f:
-            pickle.dump(self.policy, f, pickle.HIGHEST_PROTOCOL)
 
     def read_network(self, network_path):
         '''
@@ -212,14 +195,14 @@ class Agent():
         for _ in range(5):
             _ = self.run_episode(render=True)
 
-    def run_episode(self, render=False, max_iterations=100000):
+    def run_episode(self, render=False):
         '''
         It runs one episode for our policy.
         '''
 
         obs = self.env.reset()
         total_reward = 0
-        for _ in range(max_iterations):
+        for _ in range(self.max_iterations):
             state = self.normalize_obs(obs)
             action = self.which_action(state)
             obs, reward, done, _ = self.env.step(action)
@@ -237,7 +220,7 @@ class Agent():
 
     def test(self):
         scores = [self.run_episode() for _ in range(10)]
-        print('The average total reward of our policy is {}.'.format(np.mean(scores)))
+        print('Average total reward: {}.'.format(np.mean(scores)))
 
 
 def main():
@@ -250,11 +233,11 @@ def main():
     agent = Agent('MountainCar-v0')
 
     if args.run:
-        agent.read_network('Q-learning.pkl')
+        agent.read_network('deep_q_learning.pkl')
         agent.sample()
     else:
         agent.train()
-        agent.save_network('Q-learning.pkl')
+        agent.save_network('deep_q_learning.pkl')
     agent.test()
 
 
