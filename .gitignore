@@ -1,3 +1,5 @@
 *checkpoint.ipynb
 settings.json
 *.pkl
+*checkpoint.py
+*.pyc
