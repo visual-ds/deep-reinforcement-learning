@@ -26,6 +26,7 @@ def run_episode(env, policy, render=False):
         totalReward += reward
         if done:
             break
+    env.close()
     return totalReward
 
 
