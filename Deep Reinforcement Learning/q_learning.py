@@ -72,7 +72,7 @@ class Agent():
         '''
         Save the policy in a file, allowing to run it later.
         '''
-
+        os.makedirs(os.path.dirname(policy_path), exist_ok=True)
         with open(policy_path, 'wb') as f:
             pickle.dump(self.policy, f, pickle.HIGHEST_PROTOCOL)
 

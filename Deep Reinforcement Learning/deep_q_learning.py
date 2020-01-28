@@ -185,6 +185,7 @@ class Agent():
 
     def save_network(self, network_path):
         """Save the network in order to run it faster."""
+        os.makedirs(os.path.dirname(network_path), exist_ok=True)
         self.neural_network.model.save(network_path)
         print('Neural network saved.', end='\n\n')
 
