@@ -34,7 +34,7 @@ class Agent():
         record,
         env_name='MountainCar-v0',
         gamma=0.99,
-        n_episodes=700,
+        n_episodes=1000,
         max_iterations=200,
         epsilon_decay=0.03,
         epsilon_min=0.01,
