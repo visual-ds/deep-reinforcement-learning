@@ -1,4 +1,5 @@
 from collections import deque
+from gym import wrappers
 from keras.layers import Dense
 from keras.models import load_model, Sequential
 from keras.optimizers import Adam
@@ -12,7 +13,7 @@ import time
 
 
 class NeuralNetwork():
-    def __init__(self, obs_shape, action_size, learning_rate=0.001):
+    def __init__(self, obs_shape, action_size, learning_rate=0.002):
         self.obs_shape = obs_shape
         self.action_size = action_size
         self.learning_rate = learning_rate
@@ -30,16 +31,19 @@ class NeuralNetwork():
 class Agent():
     def __init__(
         self,
+        record,
         env_name='MountainCar-v0',
-        gamma=0.999,
-        n_episodes=500,
+        gamma=0.99,
+        n_episodes=700,
         max_iterations=200,
-        epsilon_decay=0.05,
+        epsilon_decay=0.03,
         epsilon_min=0.01,
         replay_memory_capacity=20000,
         minibatch_size=32
         ):
         self.env = gym.make(env_name)
+        if record:
+            self.env = wrappers.Monitor(self.env, os.path.join(os.getcwd(), 'videos', str(time.time())))
         self.set_seeds(int(time.time()))
         self.gamma = gamma
         self.n_episodes = n_episodes
@@ -52,6 +56,7 @@ class Agent():
         self.replay_memory_capacity = replay_memory_capacity
         self.minibatch_size = minibatch_size
         self.neural_network = NeuralNetwork(self.obs_shape, self.action_size)
+        self.n_success = 0
 
     def set_seeds(self, seed):
         """Set random seeds using current time."""
@@ -73,7 +78,8 @@ class Agent():
         self.target_network.model.set_weights(self.neural_network.model.get_weights())
 
         for episode in range(self.n_episodes):
-            self.train_episode(episode)
+            if self.train_episode(episode):
+                break
             if (episode + 1) % 50 == 0:
                 self.sample(1)
 
@@ -82,12 +88,12 @@ class Agent():
     def train_episode(self, episode):
         """Train one episode of deep Q-learning."""
         obs = self.env.reset()
-        state = obs  # self.normalize_obs(obs)
+        state = self.normalize_obs(obs)
         total_reward = 0
         for i in range(self.max_iterations):
             action = self.take_action(state)
             obs, reward, done, _ = self.env.step(action)
-            state_ = obs  # self.normalize_obs(obs)
+            state_ = self.normalize_obs(obs)
             self.replay_memory.append([state, action, reward, state_, done])
             self.train_from_replay()
             state = state_
@@ -95,8 +101,11 @@ class Agent():
             if done:
                 break
         self.report(i, episode, total_reward)
+        if self.success >= 25:
+            return True
         self.update_epsilon()
         self.sync_networks()
+        return False
             
     def take_action(self, state):
         """
@@ -150,6 +159,9 @@ class Agent():
         result = 'FAIL'
         if i < self.max_iterations - 1:
             result = 'SUCCESS'
+            self.success += 1
+        else:
+            self.success = 0
         print('Ep. {}: {}. Reward = {} and epsilon = {}.'.format(episode, result, total_reward, self.epsilon), end='\n\n')
 
     def update_epsilon(self):
@@ -163,11 +175,7 @@ class Agent():
         self.target_network.model.set_weights(self.neural_network.model.get_weights())
 
     def normalize_obs(self, obs):
-        '''
-        Normalize observation.
-        Raw observation -> observation between 0 and 1
-        '''
-
+        """Normalize observation."""
         state = (obs - self.env.env.low) / (self.env.env.high - self.env.env.low)
         return state
 
@@ -197,8 +205,7 @@ class Agent():
         obs = self.env.reset()
         total_reward = 0
         for _ in range(self.max_iterations):
-            # state = self.normalize_obs(obs)
-            state = obs
+            state = self.normalize_obs(obs)
             action = self.which_action(state)
             obs, reward, done, _ = self.env.step(action)
             total_reward += reward
@@ -213,18 +220,14 @@ class Agent():
         """Select which is the best action based on the network."""
         return np.argmax(self.compute_values(state))
 
-    # def test(self):
-    #     """Test neural network."""
-    #     scores = [self.run_episode() for _ in range(10)]
-    #     print('Average total reward: {}.'.format(np.mean(scores)))
-
 
 def main():    
     parser = argparse.ArgumentParser()
     parser.add_argument('--run', action='store_true')
+    parser.add_argument('--record', action='store_true')
     args = parser.parse_args()
 
-    agent = Agent()
+    agent = Agent(args.record)
     if args.run:
         agent.load_network('deep_q_learning.h5')
         agent.sample(5)
