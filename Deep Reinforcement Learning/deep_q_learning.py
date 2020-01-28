@@ -229,13 +229,11 @@ def main():
 
     agent = Agent(args.record)
     if args.run:
-        agent.load_network('deep_q_learning.h5')
+        agent.load_network('data/deep_q_learning.h5')
         agent.sample(5)
     else:
         agent.train()
-        agent.save_network('deep_q_learning.h5')
-    # agent.test()
-
+        agent.save_network('data/deep_q_learning.h5')
 
 if __name__ == '__main__':
     main()
