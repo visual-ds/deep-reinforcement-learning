@@ -142,10 +142,10 @@ def main():
     agent = Agent('MountainCar-v0')
 
     if args.run:
-        agent.read_policy('q_learning.pkl')
+        agent.read_policy('data/q_learning.pkl')
     else:
         agent.train()
-        agent.save_policy('q_learning.pkl')
+        agent.save_policy('data/q_learning.pkl')
 
     agent.test()
     agent.sample()
