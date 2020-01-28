@@ -101,7 +101,7 @@ class Agent():
             if done:
                 break
         self.report(i, episode, total_reward)
-        if self.success >= 25:
+        if self.success >= 50:
             return True
         self.update_epsilon()
         self.sync_networks()
