@@ -13,7 +13,7 @@ import time
 
 
 class NeuralNetwork():
-    def __init__(self, obs_shape, action_size, learning_rate=0.002):
+    def __init__(self, obs_shape, action_size, learning_rate=0.001):
         self.obs_shape = obs_shape
         self.action_size = action_size
         self.learning_rate = learning_rate
@@ -33,10 +33,10 @@ class Agent():
         self,
         record,
         env_name='MountainCar-v0',
-        gamma=0.99,
+        gamma=0.999,
         n_episodes=1000,
         max_iterations=200,
-        epsilon_decay=0.03,
+        epsilon_decay=0.05,
         epsilon_min=0.01,
         replay_memory_capacity=20000,
         minibatch_size=32
@@ -101,7 +101,7 @@ class Agent():
             if done:
                 break
         self.report(i, episode, total_reward)
-        if self.success >= 50:
+        if self.success >= 30:
             return True
         self.update_epsilon()
         self.sync_networks()
