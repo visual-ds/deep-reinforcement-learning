@@ -9,7 +9,7 @@ In this repo, you'll find:
 - *MountainCar-v0* Q-learning
 - ***MountainCar-v0* deep Q-learning**
 
-![alt text](https://raw.githubusercontent.com/lucasresck/Deep-RL-Scientific-Initiation/master/videos/1580174020.5228155/openaigym.video.0.17462.video000000.gif)
+![alt text](https://raw.githubusercontent.com/lucasresck/Deep-RL-Scientific-Initiation/master/images/mountaincar-v0.gif)
 
 ## Installation
 
