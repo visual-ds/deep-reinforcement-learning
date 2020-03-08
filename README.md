@@ -1,4 +1,4 @@
-# Deep-Reinforcement-Learning
+# deep-reinforcement-learning
 
 Scientific Initiation in Deep Reinforcement Learning at Getulio Vargas Foundation.
 
