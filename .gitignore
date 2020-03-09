@@ -7,3 +7,13 @@ settings.json
 *.gif
 *.json
 *.mp4
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
+*.nav
+*.out
+*.pdf
+*.snm
+*.gz
+*.toc
