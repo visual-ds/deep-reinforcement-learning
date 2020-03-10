@@ -4,6 +4,7 @@
 \usepackage{caption}
 \captionsetup[figure]{font=scriptsize,labelfont=scriptsize}
 % \usepackage{utopia}
+\usepackage{animate}
 
 \usetheme{Madrid}
 \usecolortheme{default}
@@ -80,8 +81,8 @@
             \begin{itemize}
                 \item $S$: space of states $s$;
                 \item $A$: space of actions $a$;
-                \item $T$: transition operator, with probabilities $p(s_{t+1} | s_t, a_t)$
-                \item $r$: reward function $r(s, a)$.
+                \item $T$: transition operator, with probabilities $P(s_{t+1} | s_t, a_t)$;
+            \item $r$: reward function $S \times A \rightarrow {\rm I\!R}, \ (s, a) \mapsto r(s, a)$.
             \end{itemize}
         \end{frame}
 
@@ -89,8 +90,8 @@
             \frametitle{The goal of Reinforcement Learning}
             \begin{figure}
                 \centering
-                \caption{Source: \href{http://rail.eecs.berkeley.edu/deeprlcourse-fa18/static/slides/lec-4.pdf}{Deep RL Berkeley Course}}
-                \includegraphics[width=\textwidth]{figures/goal_rl.png}
+                \caption{Reinforcement Learning world (\href{http://rail.eecs.berkeley.edu/deeprlcourse-fa18/static/slides/lec-4.pdf}{Deep RL Berkeley Course}).}
+                \includegraphics[width=0.9\linewidth]{figures/goal_rl.png}
                 \label{fig:1}
             \end{figure}
             $$p_{\theta}(\tau) = p_{\theta}(s_1, a_1, \cdots, s_T, a_T) = p(s_1) \prod_{t=1}^T \pi_{\theta}(a_t|s_t)p(s_t, a_t)$$
@@ -109,7 +110,7 @@
 
         \begin{frame}
             \frametitle{More definitions}
-            \begin{block}{Q Function}
+            \begin{block}{Q-Function}
                 $$Q^\pi(s_t, a_t) = \sum_{t'=t}^T E_{\pi_\theta}[r(s_{t'}, a_{t'})|s_t, a_t]$$
 
                 The total expected reward for taking an action $a_t$ when the state is $s_t$.
@@ -119,6 +120,88 @@
 
                 The total expected reward when the state is $s_t$.
             \end{block}
+        \end{frame}
+
+        \begin{frame}
+            \frametitle{Policy iteration}
+            \begin{figure}
+                \centering
+                \includegraphics[width=0.6\linewidth]{figures/policy_iteration.png}
+                \label{fig2:policy}
+                \caption{Policy iteration (Sutton and Andrew, Reinforcement Learning: An Introduction, 2nd edition).}
+            \end{figure}
+        \end{frame}
+
+        \begin{frame}
+            \frametitle{Policy iteration example: FrozenLake8x8}
+            \begin{figure}
+                \centering
+                \includegraphics[width=0.2\linewidth]{figures/frozenlake8x8}
+                \label{fig4:frozenlake8x8}
+                \caption{FronzenLake8x8 environment.}
+            \end{figure}
+        \end{frame}
+
+        \begin{frame}
+            \frametitle{Value iteration}
+            \begin{figure}
+                \centering
+                \includegraphics[width=0.7\linewidth]{figures/value_iteration.png}
+                \label{fig5:value}
+                \caption{Value iteration (Sutton and Andrew, Reinforcement Learning: An Introduction, 2nd edition).}
+            \end{figure}
+        \end{frame}
+
+        \begin{frame}
+            \frametitle{Value iteration example: FrozenLake8x8}
+            \begin{figure}
+                \centering
+                \includegraphics[width=0.2\linewidth]{figures/frozenlake8x8}
+                \label{fig6:frozenlake8x8}
+                \caption{FronzenLake8x8 environment.}
+            \end{figure}
+        \end{frame}
+
+        \begin{frame}
+            \frametitle{Q-Learning}
+            \begin{figure}
+                \centering
+                \includegraphics[width=0.8\linewidth]{figures/q_learning.png}
+                \label{fig6:q}
+                \caption{Q-Learning (Sutton and Andrew, Reinforcement Learning: An Introduction, 2nd edition).}
+            \end{figure}
+        \end{frame}
+
+        \begin{frame}
+            \frametitle{Q-Learning example}
+            \begin{figure}
+                \centering
+                \fbox{\includegraphics[width=0.7\linewidth]{figures/mountaincar.png}}
+                \label{fig7:mountain}
+                \caption{MountainCar enviroment.}
+            \end{figure}
+        \end{frame}
+
+        \begin{frame}
+            \frametitle{Approximate Q-Learning}
+            We assume the existence of a feature function $f: (s, a) \mapsto f_1(s, a), \cdots, f_n(s, a)$, with $f_i(s, a)$ a feature value.
+            \begin{block}{Approximate Q-Function}
+                $$Q(s, a) = \sum_{i = 1}^n f_i(s, a) w_i$$
+            \end{block}
+            \begin{block}{Approximate Q-learning iteration}
+                $$w_i \leftarrow w_i + \alpha \cdot difference \cdot f_i(s, a)$$
+                $$difference = (r + \gamma \max_{a'} Q(s', a')) - Q(s, a)$$
+            \end{block}
+        \end{frame}
+
+        \begin{frame}
+            \frametitle{Approximate Q-Learning example}
+            \begin{figure}
+                \centering  
+                \includegraphics[width=0.8\linewidth]{figures/pacman.png}              
+                \caption{PacMan environment (\href{http://ai.berkeley.edu/reinforcement.html}{Berkeley Intro to AI}).}
+                \label{fig8:pacman}
+            \end{figure}
         \end{frame}
 
     % Instead of trying to produce a program to simulate the adult mind, why not rather try to produce one which simulates the child's? If this were then subjected to an appropriate course of education one would obtain the adult brain. - Alan Turing
