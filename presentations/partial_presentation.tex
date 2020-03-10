@@ -7,7 +7,7 @@
 \usepackage{animate}
 
 \usetheme{Madrid}
-\usecolortheme{default}
+\usecolortheme{seahorse}
 
 \title[Deep Reinforcement Learning]{Deep Reinforcement Learning}
 \subtitle{Scientific Initiation}
@@ -204,6 +204,101 @@
             \end{figure}
         \end{frame}
 
-    % Instead of trying to produce a program to simulate the adult mind, why not rather try to produce one which simulates the child's? If this were then subjected to an appropriate course of education one would obtain the adult brain. - Alan Turing
+    \section{Deep Reinforcement Learning}
+
+        \begin{frame}
+            \frametitle{Deep Q-Learning with Experience Replay}
+            \begin{figure}
+                \centering
+                \includegraphics[width=\textwidth]{figures/deep_q_learning}
+                \caption{Deep Q-Learning algorithm (\href{https://arxiv.org/pdf/1312.5602v1.pdf}{DeepMind, Playing Atari with Deep Reinforcement Learning}).}
+                \label{fig9:deep-q}
+            \end{figure}
+        \end{frame}
+
+        \begin{frame}
+            \frametitle{Deep Q-Learning with Experience Replay example}
+        
+            \begin{figure}[]
+                \begin{figure}
+                    \centering
+                    \fbox{\includegraphics[width=0.7\linewidth]{figures/mountaincar.png}}
+                    \label{fig10:mountain2}
+                    \caption{MountainCar enviroment.}
+                \end{figure}
+            \end{figure}
+        
+        \end{frame}
+
+    \section{What's next}
+
+        \begin{frame}
+            \frametitle{Deep Q-Learning + CNN}
+        
+            \begin{itemize}
+                \item Learn from a game image;
+                \item Use convolutional neural networks to learn to treat this image.
+            \end{itemize}
+
+            \begin{figure}[]
+                \centering
+                \includegraphics[width=0.7\textwidth]{figures/cnn}
+                \caption{Convolutional Neural Network example (\href{https://towardsdatascience.com/a-comprehensive-guide-to-convolutional-neural-networks-the-eli5-way-3bd2b1164a53}{Saha, A Comprehensive Guide to Convolutional Neural Networks — the ELI5 way}).}
+                \label{fig11:cnn}
+            \end{figure}
+        
+        \end{frame}
+
+        \begin{frame}
+            \frametitle{Atari 2600}
+            
+            \begin{figure}[]
+                \centering
+                \includegraphics[height=0.7\textheight]{figures/comparison1}
+                \caption{Comparison of DQN with linear methods, both normalized by professional players (100\%) and random players (0\%) (\href{https://storage.googleapis.com/deepmind-data/assets/papers/DeepMindNature14236Paper.pdf}{Human-level control through deep reinforcement learning}).}
+                \label{fig12:atari}
+            \end{figure}
+        
+        \end{frame}
+
+        \begin{frame}
+            \frametitle{Atari 2600}
+            
+            \begin{figure}[]
+                \centering
+                \includegraphics[width=0.8\textwidth]{figures/comparison2}
+                \caption{Comparison of DQN with linear methods, both normalized by professional players (100\%) and random players (0\%) (\href{https://storage.googleapis.com/deepmind-data/assets/papers/DeepMindNature14236Paper.pdf}{Human-level control through deep reinforcement learning}).}
+                \label{fig12:atari}
+            \end{figure}
+        
+        \end{frame}
+
+        \begin{frame}
+            \frametitle{Super Mario Bros.}
+        
+            \begin{figure}
+                \centering
+                \includegraphics[width=0.6\textwidth]{figures/super_mario_bros.png}
+                \caption{Super Mario Bros. Open AI environment (\href{https://pypi.org/project/gym-super-mario-bros/}{PyPI}).}
+                \label{fig13:mario}
+            \end{figure}
+        
+        \end{frame}
+
+    \section{Partial considerations}
+
+        \begin{frame}
+            \frametitle{Partial considerations}
+        
+            
+        
+        \end{frame}
+
+        \begin{frame}
+            \frametitle{Thank you}
+        
+            %Instead of trying to produce a program to simulate the adult mind, why not rather try to produce one which simulates the child's? If this were then subjected to an appropriate course of education one would obtain the adult brain. - Alan Turing
+        
+        \end{frame}
     
 \end{document}
