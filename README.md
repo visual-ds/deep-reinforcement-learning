@@ -1,6 +1,6 @@
 # deep-reinforcement-learning
 
-Scientific Initiation in Deep Reinforcement Learning at Getulio Vargas Foundation.
+Scientific Initiation (2019 - today) in Deep Reinforcement Learning at Getulio Vargas Foundation.
 
 If you wanna know the current state of my studies, see my [presentation](https://github.com/lucasresck/deep-reinforcement-learning/blob/master/presentations/partial_presentation.pdf).
 
