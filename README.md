@@ -2,7 +2,9 @@
 
 Scientific Initiation in Deep Reinforcement Learning at Getulio Vargas Foundation.
 
-In this repo, you'll find:
+If you wanna know the current state of my studies, see my [presentation](https://github.com/lucasresck/deep-reinforcement-learning/blob/master/presentations/partial_presentation.pdf).
+
+In this repository, you'll find implementations of:
 - *CartPole-v0* random search policy
 - *FrozenLake8x8-v0* value iteration
 - *FrozenLake8x8-v0* policy iteration
