@@ -5,6 +5,12 @@
 \captionsetup[figure]{font=scriptsize,labelfont=scriptsize}
 % \usepackage{utopia}
 \usepackage{animate}
+\usepackage{epigraph}
+
+\setlength\epigraphwidth{8cm}
+\setlength\epigraphrule{0pt}
+
+\usepackage{etoolbox}
 
 \usetheme{Madrid}
 \usecolortheme{seahorse}
@@ -43,10 +49,26 @@
 
         \begin{frame}
             \frametitle{Motivation}
+
+            \begin{itemize}
+                \item I wanted to do Scientific Initiation in Machine Learning;
+                \item Reinforcement Learning is a quite promising area, because of the potential of applications;
+                \item Deep Learning is one of the most powerful Machine Learning areas, because DNN can reach such degree of generalization;
+                \item It seems that Deep Reinforcement Learning has very impressive powerful applications and it's on mainstream.
+            \end{itemize}
+
         \end{frame}
 
         \begin{frame}
             \frametitle{Intuition}
+
+            \begin{figure}
+                \centering
+                \includegraphics[width=0.6\textwidth]{figures/rl.png}
+                \caption{Reinforcement Learning example (\href{https://en.wikipedia.org/wiki/Reinforcement_learning}{Wikipedia})}
+                \label{fig14:rl}
+            \end{figure}
+
         \end{frame}
 
     % \section{Imitation Learning}
@@ -94,7 +116,7 @@
                 \includegraphics[width=0.9\linewidth]{figures/goal_rl.png}
                 \label{fig:1}
             \end{figure}
-            $$p_{\theta}(\tau) = p_{\theta}(s_1, a_1, \cdots, s_T, a_T) = p(s_1) \prod_{t=1}^T \pi_{\theta}(a_t|s_t)p(s_t, a_t)$$
+            $$p_{\theta}(\tau) = p_{\theta}(s_1, a_1, \cdots, s_T, a_T) = p(s_1) \prod_{t=1}^T \pi_{\theta}(a_t|s_t)p(s_{t+1}|s_t, a_t)$$
             $$\theta^* = \arg\max_\theta E_{\tau \sim p_\theta(\tau)}\left[\sum_t r(s_t, a_t)\right]$$
         \end{frame}
 
@@ -210,7 +232,7 @@
             \frametitle{Deep Q-Learning with Experience Replay}
             \begin{figure}
                 \centering
-                \includegraphics[width=\textwidth]{figures/deep_q_learning}
+                \includegraphics[width=0.8\textwidth]{figures/deep_q_learning}
                 \caption{Deep Q-Learning algorithm (\href{https://arxiv.org/pdf/1312.5602v1.pdf}{DeepMind, Playing Atari with Deep Reinforcement Learning}).}
                 \label{fig9:deep-q}
             \end{figure}
@@ -290,14 +312,18 @@
         \begin{frame}
             \frametitle{Partial considerations}
         
-            
+            \begin{itemize}
+                \item Reinforcement Learning \& Deep Reinforcement Learning today consist in many algorithms, so that many chalenging problems can be solved with them;
+                \item We have today different powerful world applications, and many great things are being done.
+                \item There are many paths to follow in order to learn and to research.
+            \end{itemize}
         
         \end{frame}
 
         \begin{frame}
             \frametitle{Thank you}
         
-            %Instead of trying to produce a program to simulate the adult mind, why not rather try to produce one which simulates the child's? If this were then subjected to an appropriate course of education one would obtain the adult brain. - Alan Turing
+            \epigraph{``Instead of trying to produce a program to simulate the adult mind, why not rather try to produce one which simulates the child's? If this were then subjected to an appropriate course of education one would obtain the adult brain."}{--- \textup{Alan Turing}}
         
         \end{frame}
     
