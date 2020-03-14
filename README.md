@@ -11,7 +11,7 @@ In this repository, you'll find implementations of:
 - *MountainCar-v0* Q-learning
 - ***MountainCar-v0* deep Q-learning**
 
-![alt text](https://raw.githubusercontent.com/lucasresck/Deep-RL-Scientific-Initiation/master/images/mountaincar-v0.gif)
+![alt text](https://raw.githubusercontent.com/lucasresck/deep-reinforcement-learning/master/images/mountaincar-v0.gif)
 
 ## Installation
 
