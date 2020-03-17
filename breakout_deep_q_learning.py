@@ -81,7 +81,6 @@ class DeepQAgent():
         self.minibatch_size = minibatch_size
         self.nn_input_shape = nn_input_shape
         self.neural_network = NeuralNetwork(self.nn_input_shape, self.action_size)
-        self.n_success = 0
         self.n_history = n_history
         self.history = deque(maxlen=self.n_history)
 
@@ -93,6 +92,7 @@ class DeepQAgent():
 
     def train(self):
         """Train deep Q-learning agent."""
+        self.start_time = time.time()
         self.deep_q_learning()
 
     def deep_q_learning(self):
@@ -109,16 +109,18 @@ class DeepQAgent():
         while self.i_frames < self.max_frames:
             if self.train_episode(episode):
                 break
-            if (episode + 1) % 50 == 0:
-                self.sample(1)
+            # if (episode + 1) % 50 == 0:
+            #     self.sample(1)
             episode += 1
 
         self.env.close()
 
     def train_episode(self, episode):
         """Train one episode of deep Q-learning."""
+        self.history = deque(maxlen=self.n_history)
         obs = self.env.reset()
         state = self.preprocess(obs)
+        self.i_frames += 1
         total_reward = 0
         for i in range(self.max_iterations):
             action = self.take_action(state)
@@ -135,8 +137,6 @@ class DeepQAgent():
             if done:
                 break
         self.report(i, episode, total_reward)
-        if self.n_success >= 30:
-            return True
         self.sync_networks()
         return False
 
@@ -215,13 +215,8 @@ class DeepQAgent():
 
     def report(self, i, episode, total_reward):
         """Show status on console."""
-        result = 'FAIL'
-        if i < self.max_iterations - 1:
-            result = 'SUCCESS'
-            self.n_success += 1
-        else:
-            self.n_success = 0
-        print('Ep. {}: {}. Reward = {} and epsilon = {}.'.format(episode, result, total_reward, self.epsilon), end='\n\n')
+        time_now = (time.time() - self.start_time) / 60
+        print('Ep. {}. Reward = {}, epsilon = {}, time = {:.2f}min'.format(episode, total_reward, self.epsilon, time_now), end='\n\n')
 
     def sync_networks(self):
         """Sync original and target neural networks."""
