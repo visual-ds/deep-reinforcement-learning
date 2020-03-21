@@ -142,24 +142,37 @@ class DeepQAgent():
 
     def preprocess(self, obs):
         """Preprocess observation."""
-        mean = np.mean(obs, axis=2)  # RGB to gray scale
-        img = mean[32:, :]
+        gray = self.gray(obs)
+        img = self.cut(gray)
+        img = self.resize(img)
+        state = self.create_state(img)
+        return state
+
+    def gray(self, obs):
+        return np.mean(obs, axis=2)
+
+    def cut(self, gray):
+        img = gray[32:, :]
         x, y = img.shape
         img = img[:-np.abs(x-y), :]
-
+        return img
+    
+    def resize(self, img):
         new_img = np.zeros((int(np.ceil(img.shape[0]/2)), int(np.ceil(img.shape[1]/2))))
         for i in range(int(np.ceil(img.shape[0]/2))):
             for j in range(int(np.ceil(img.shape[1]/2))):
                 new_img[i, j] = np.max(img[2*i:2*i+2, 2*j:2*j+2])
         img = new_img
         img = img.reshape(img.shape[0], img.shape[1], 1)
+        return img
 
+    def create_state(self, img):
         self.history.append(img)
         state = np.concatenate(tuple(self.history), axis=2)
         for _ in range(self.n_history - state.shape[2]):
-            state = np.concatenate((state, self.history[-1]), axis=2)    
+            state = np.concatenate((state, self.history[-1]), axis=2)  
         return state
-            
+
     def take_action(self, state):
         """
         Take action based in epsilon-greedy algorithm.
@@ -190,6 +203,11 @@ class DeepQAgent():
             # If there isn't enough samples
             return
         minibatch = random.sample(self.replay_memory, self.minibatch_size)
+        states, states_ = self.extract_states(minibatch)
+        targets = self.calculate_targets(minibatch, states, states_)
+        self.fit(states, targets)
+
+    def extract_states(self, minibatch):
         states = []
         states_ = []
         for sample in minibatch:
@@ -198,15 +216,24 @@ class DeepQAgent():
             states_.append(state_)
         states = np.array(states)
         states_ = np.array(states_)
-        targets = self.neural_network.model.predict(states)
-        targets_ = self.target_network.model.predict(states_)
+        return states, states_
+
+    def calculate_targets(self, minibatch, states, states_):
+        targets, targets_ = self.target_predict(states, states_)
         for i, sample in enumerate(minibatch):
             state, action, reward, state_, done = sample
             if done:
                 targets[i][action] = reward
             else:
                 targets[i][action] = reward + self.gamma * np.max(targets_[i])
+        return targets
 
+    def target_predict(self, states, states_):
+        targets = self.neural_network.model.predict(states)
+        targets_ = self.target_network.model.predict(states_)
+        return targets, targets_
+
+    def fit(self, states, targets):
         self.neural_network.model.fit(
             x=states,
             y=targets,
