@@ -2,9 +2,6 @@
 
 from collections import deque
 from gym import wrappers
-from keras.layers import Dense
-from keras.models import load_model, Sequential
-from keras.optimizers import Adam
 import argparse
 import gym
 import numpy as np
@@ -16,10 +13,11 @@ import time
 
 
 class NeuralNetwork():
-    def __init__(self, input_shape, action_size, learning_rate=0.001):
+    def __init__(self, input_shape, action_size, learning_rate=0.001, summary=False):
         self.input_shape = input_shape
         self.action_size = action_size
         self.learning_rate = learning_rate
+        self.summary = summary
         self.model = self.model_of_network()
 
     def model_of_network(self):
@@ -45,7 +43,8 @@ class NeuralNetwork():
                 activation='linear'
             )
         ])
-        print(model.summary())
+        if self.summary:
+            model.summary()
         model.compile(loss='mean_squared_error', optimizer=tf.keras.optimizers.RMSprop(learning_rate=self.learning_rate))
         return model
 
@@ -80,7 +79,7 @@ class DeepQAgent():
         self.replay_memory_capacity = replay_memory_capacity
         self.minibatch_size = minibatch_size
         self.nn_input_shape = nn_input_shape
-        self.neural_network = NeuralNetwork(self.nn_input_shape, self.action_size)
+        self.neural_network = NeuralNetwork(self.nn_input_shape, self.action_size, summary=True)
         self.n_history = n_history
         self.history = deque(maxlen=self.n_history)
 
@@ -117,6 +116,9 @@ class DeepQAgent():
 
     def train_episode(self, episode):
         """Train one episode of deep Q-learning."""
+        self.time_flag = time.time()
+        self.frames_flag = self.i_frames
+
         self.history = deque(maxlen=self.n_history)
         obs = self.env.reset()
         state = self.preprocess(obs)
@@ -237,8 +239,32 @@ class DeepQAgent():
 
     def report(self, i, episode, total_reward):
         """Show status on console."""
-        time_now = (time.time() - self.start_time) / 60
-        print('Ep. {}. Reward = {}, epsilon = {}, time = {:.2f}min'.format(episode, total_reward, self.epsilon, time_now), end='\n\n')
+
+        print()
+        print('episode    reward    epsilon    time    accum_time    frames    acumm_frames')
+
+        print('{}'.format(episode) + ' '*(len('episode')+4-len(str(episode))), end='')
+
+        reward = int(total_reward)
+        print('{}'.format(reward) + ' '*(len('reward')+4-len(str(reward))), end='')
+
+        epsilon = self.epsilon
+        epsilon = '{:.3f}'.format(epsilon)
+        print(epsilon + ' '*(len('epsilon')+4-len(epsilon)), end='')
+
+        time_ = time.time() - self.time_flag
+        time_ = '{:.2f}'.format(time_)
+        print(time_ + ' '*(len('time')+4-len(time_)), end='')
+
+        accum_time = time.time() - self.start_time
+        accum_time = '{:.2f}'.format(accum_time)
+        print(accum_time + ' '*(len('accum_time')+4-len(accum_time)), end='')
+
+        frames = self.i_frames - self.frames_flag
+        print('{}'.format(frames) + ' '*(len('frames')+4-len(str(frames))), end='')
+
+        accum_frames = self.i_frames
+        print('{}'.format(accum_frames) + ' '*(len('accum_frames')+4-len(str(accum_frames))))
 
     def sync_networks(self):
         """Sync original and target neural networks."""
@@ -256,10 +282,10 @@ class DeepQAgent():
 
     def load_network(self, network_path):
         """Load the network in order to run it faster."""
-        self.neural_network.model = load_model(network_path)
+        self.neural_network.model = tf.keras.models.load_model(network_path)
         print('Neural network loaded.', end='\n\n')
 
-    def sample(self, n):
+    def sample(self, n=5):
         """Sample the network."""
         print('Sampling network:')
         for _ in range(n):
@@ -271,7 +297,7 @@ class DeepQAgent():
         obs = self.env.reset()
         total_reward = 0
         for _ in range(self.max_iterations):
-            state = self.normalize_obs(obs)
+            state = self.preprocess(obs)
             action = self.which_action(state)
             obs, reward, done, _ = self.env.step(action)
             total_reward += reward
@@ -289,17 +315,17 @@ class DeepQAgent():
 
 def main():    
     parser = argparse.ArgumentParser()
-    # parser.add_argument('--run', action='store_true')
+    parser.add_argument('--run', action='store_true')
     # parser.add_argument('--record', action='store_true')
     args = parser.parse_args()
-    args.record = False
-    agent = DeepQAgent(args.record)
-    # if args.run:
-    #     agent.load_network('data/deep_q_learning.h5')
-    #     agent.sample(5)
-    # else:
-    agent.train()
-    agent.save_network('data/deep_q_learning.h5')
+    # agent = DeepQAgent(args.record)
+    agent = DeepQAgent(False)
+    if args.run:
+        agent.load_network('data/deep_q_learning.h5')
+        agent.sample()
+    else:
+        agent.train()
+        agent.save_network('data/deep_q_learning.h5')
 
 if __name__ == '__main__':
     main()
