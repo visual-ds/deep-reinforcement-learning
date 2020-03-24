@@ -1,5 +1,6 @@
 # Inspired by 'Playing Atari with Deep Reinforcement Learning' (https://arxiv.org/abs/1312.5602)
 
+from __future__ import absolute_import, division, print_function, unicode_literals
 from collections import deque
 from gym import wrappers
 import argparse
@@ -312,13 +313,39 @@ class DeepQAgent():
         """Select which is the best action based on the network."""
         return np.argmax(self.compute_values(state))
 
+def gpu_setup(nogpus):
+    """Config GPU for TensorFlow."""
+    if nogpus:
+        # physical_devices = tf.config.list_physical_devices('GPU') 
+        try: 
+            tf.config.set_visible_devices([], 'GPU') 
+            logical_devices = tf.config.list_logical_devices('GPU') 
+            # Logical device was not created for first GPU 
+            assert len(logical_devices) == 0
+        except: 
+            # Invalid device or cannot modify virtual devices once initialized.
+            print('GPU(s) not disabled.')
+
+    gpus = tf.config.experimental.list_physical_devices('GPU')
+    if gpus:
+        try:
+            # Currently, memory growth needs to be the same across GPUs
+            for gpu in gpus:
+                tf.config.experimental.set_memory_growth(gpu, True)
+                logical_gpus = tf.config.experimental.list_logical_devices('GPU')
+                print('\n\n\n', len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs\n\n\n")
+        except RuntimeError as e:
+            # Memory growth must be set before GPUs have been initialized
+            print(e)
 
 def main():    
     parser = argparse.ArgumentParser()
     parser.add_argument('--run', action='store_true')
+    parser.add_argument('--nogpus', action='store_true')
     # parser.add_argument('--record', action='store_true')
     args = parser.parse_args()
     # agent = DeepQAgent(args.record)
+    # gpu_setup(args.nogpus)
     agent = DeepQAgent(False)
     if args.run:
         agent.load_network('data/deep_q_learning.h5')
