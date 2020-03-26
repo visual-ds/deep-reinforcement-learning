@@ -18,7 +18,7 @@ In this repository, you'll find implementations of:
 Clone this repository:
 
 ```bash
-git clone https://github.com/lucasresck/Deep-RL-Scientific-Initiation.git
+git clone https://github.com/lucasresck/deep-reinforcement-learning.git
 ```
 
 ## Usage
