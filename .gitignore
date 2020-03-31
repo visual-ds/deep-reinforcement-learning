@@ -19,3 +19,4 @@ settings.json
 *.toc
 *.txt
 *stats/*
+Dockerfile
