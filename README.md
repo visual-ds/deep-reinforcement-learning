@@ -18,7 +18,7 @@ In this repository, you'll find implementations of:
 Clone this repository:
 
 ```bash
-git clone https://github.com/lucasresck/Deep-RL-Scientific-Initiation.git
+git clone https://github.com/lucasresck/deep-reinforcement-learning.git
 ```
 
 ## Usage
@@ -26,7 +26,7 @@ git clone https://github.com/lucasresck/Deep-RL-Scientific-Initiation.git
 All Python files can be run in this way:
 
 ```bash
-python deep_q_learning.py
+python mountaincar_deep_q_learning.py
 ```
 
 Some files have special arguments:
@@ -36,19 +36,19 @@ Some files have special arguments:
 For training and saving the model:
 
 ```bash
-python deep_q_learning.py
+python mountaincar_deep_q_learning.py
 ```
 
 For running the saved model:
 
 ```bash
-python deep_q_learning.py --run
+python mountaincar_deep_q_learning.py --run
 ```
 
 For saving a video from the trained model:
 
 ```bash
-python deep_q_learning.py --run --record
+python mountaincar_deep_q_learning.py --run --record
 ```
 
 ### *MountainCar-v0* Q-learning
@@ -56,11 +56,11 @@ python deep_q_learning.py --run --record
 For training and saving the model:
 
 ```bash
-python q_learning.py
+python mountaincar_q_learning.py
 ```
 
 For running the saved model:
 
 ```bash
-python q_learning.py --run
+python mountaincar_q_learning.py --run
 ``` 
