@@ -18,3 +18,4 @@ settings.json
 *.gz
 *.toc
 *.txt
+*stats/*
