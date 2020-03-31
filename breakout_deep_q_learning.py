@@ -2,7 +2,7 @@
 
 from __future__ import absolute_import, division, print_function, unicode_literals
 from collections import deque
-from gym import wrappers
+# from gym import wrappers
 import argparse
 import gym
 import numpy as np
@@ -54,7 +54,7 @@ class DeepQAgent():
     def __init__(
         self,
         record,
-        env_name='Breakout-v0',
+        env_name='BreakoutDeterministic-v4',
         gamma=0.999,
         max_frames=1000000,
         max_iterations=1000000,
@@ -123,7 +123,6 @@ class DeepQAgent():
         self.history = deque(maxlen=self.n_history)
         obs = self.env.reset()
         state = self.preprocess(obs)
-        self.i_frames += 1
         total_reward = 0
         for i in range(self.max_iterations):
             action = self.take_action(state)
@@ -242,7 +241,7 @@ class DeepQAgent():
         """Show status on console."""
 
         print()
-        print('episode    reward    epsilon    time    accum_time    frames    acumm_frames')
+        print('episode    reward    epsilon    time     accum_time    frames    acumm_frames')
 
         print('{}'.format(episode) + ' '*(len('episode')+4-len(str(episode))), end='')
 
@@ -255,7 +254,7 @@ class DeepQAgent():
 
         time_ = time.time() - self.time_flag
         time_ = '{:.2f}'.format(time_)
-        print(time_ + ' '*(len('time')+4-len(time_)), end='')
+        print(time_ + ' '*(len('time')+5-len(time_)), end='')
 
         accum_time = time.time() - self.start_time
         accum_time = '{:.2f}'.format(accum_time)
@@ -313,19 +312,8 @@ class DeepQAgent():
         """Select which is the best action based on the network."""
         return np.argmax(self.compute_values(state))
 
-def gpu_setup(nogpus):
+def gpu_setup():
     """Config GPU for TensorFlow."""
-    if nogpus:
-        # physical_devices = tf.config.list_physical_devices('GPU') 
-        try: 
-            tf.config.set_visible_devices([], 'GPU') 
-            logical_devices = tf.config.list_logical_devices('GPU') 
-            # Logical device was not created for first GPU 
-            assert len(logical_devices) == 0
-        except: 
-            # Invalid device or cannot modify virtual devices once initialized.
-            print('GPU(s) not disabled.')
-
     gpus = tf.config.experimental.list_physical_devices('GPU')
     if gpus:
         try:
@@ -333,7 +321,7 @@ def gpu_setup(nogpus):
             for gpu in gpus:
                 tf.config.experimental.set_memory_growth(gpu, True)
                 logical_gpus = tf.config.experimental.list_logical_devices('GPU')
-                print('\n\n\n', len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs\n\n\n")
+                print(len(gpus), "physical GPUs,", len(logical_gpus), "logical GPUs")
         except RuntimeError as e:
             # Memory growth must be set before GPUs have been initialized
             print(e)
@@ -341,11 +329,12 @@ def gpu_setup(nogpus):
 def main():    
     parser = argparse.ArgumentParser()
     parser.add_argument('--run', action='store_true')
-    parser.add_argument('--nogpus', action='store_true')
+    parser.add_argument('--gpu', action='store_true')
     # parser.add_argument('--record', action='store_true')
     args = parser.parse_args()
     # agent = DeepQAgent(args.record)
-    # gpu_setup(args.nogpus)
+    if args.gpu:
+        gpu_setup()
     agent = DeepQAgent(False)
     if args.run:
         agent.load_network('data/deep_q_learning.h5')
