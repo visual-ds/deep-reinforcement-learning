@@ -20,3 +20,4 @@ settings.json
 *.txt
 *stats/*
 Dockerfile
+*test.ipynb
