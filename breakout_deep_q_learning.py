@@ -4,6 +4,8 @@ from collections import deque
 from datetime import datetime
 # from gym import wrappers
 import argparse
+import cProfile
+import csv
 import gym
 import numpy as np
 import os
@@ -11,7 +13,6 @@ import pickle
 import random
 import tensorflow as tf
 import time
-import csv
 
 
 class NeuralNetwork():
@@ -76,7 +77,7 @@ class ReplayMemory():
         minibatch = [self.replay_memory[i].copy() for i in i_minibatch]
         # Fill up the states and states_
         my_minibatch = minibatch.copy()
-        for i, sample in enumerate(minibatch):
+        for i, _ in enumerate(minibatch):
             state = self.full_state(i_minibatch[i])
             my_minibatch[i][0] = state
             state_ = self.full_state(i_minibatch[i]+1)
@@ -107,8 +108,8 @@ class DeepQAgent():
         nn_input_shape=(105, 80, 4),
     ):
         self.env = gym.make(env_name)
-        if record:
-            self.env = wrappers.Monitor(self.env, os.path.join(os.getcwd(), 'videos', str(time.time())))
+        # if record:
+        #     self.env = wrappers.Monitor(self.env, os.path.join(os.getcwd(), 'videos', str(time.time())))
         self.set_seeds(int(time.time()))
         self.gamma = gamma
         self.max_frames = max_frames
@@ -372,19 +373,18 @@ class DeepQAgent():
         """Save the network in order to run it faster."""
         os.makedirs(os.path.dirname(network_path), exist_ok=True)
         self.neural_network.model.save(network_path)
-        print('Neural network saved.', end='\n\n')
+        print('\nNeural network saved.')
 
     def load_network(self, network_path):
         """Load the network in order to run it faster."""
         self.neural_network.model = tf.keras.models.load_model(network_path)
-        print('Neural network loaded.', end='\n\n')
+        print('\nNeural network loaded.', end='\n\n')
 
     def sample(self, n=5):
         """Sample the network."""
-        print('Sampling network:')
+        print('\nSampling network:\n')
         for _ in range(n):
             self.run_episode(render=True)
-        print()
 
     def run_episode(self, render=False):
         """Run one episode for our network."""
@@ -421,6 +421,7 @@ class DeepQAgent():
         with open(file_path, 'w', newline='') as myfile:
             wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
             wr.writerow(self.rewards)
+        print('\nRewards saved.')
 
 def gpu_setup():
     """Config GPU for TensorFlow."""
@@ -431,6 +432,7 @@ def gpu_setup():
             for gpu in gpus:
                 tf.config.experimental.set_memory_growth(gpu, True)
                 logical_gpus = tf.config.experimental.list_logical_devices('GPU')
+                print()
                 print(len(gpus), "physical GPUs,", len(logical_gpus), "logical GPUs")
         except RuntimeError as e:
             # Memory growth must be set before GPUs have been initialized
@@ -440,6 +442,7 @@ def main():
     parser = argparse.ArgumentParser(description='Train or run Breakout deep Q-learning algorithm.')
     parser.add_argument('--run', metavar='MODEL_PATH', help='run saved model')
     parser.add_argument('--gpu', action='store_true', help='limit gpu growth')
+    parser.add_argument('--profile', action='store_true', help='profile training')
     # parser.add_argument('--record', action='store_true')
     args = parser.parse_args()
     # agent = DeepQAgent(args.record)
@@ -450,8 +453,14 @@ def main():
         agent.load_network(args.run)
         agent.sample()
     else:
-        agent.train()
-        now = datetime.today().strftime('%Y-%m-%d-%H:%M:%S')
+        if args.profile:
+            cProfile.runctx('agent.train()', {'agent': agent}, {}, filename='stats/stats-temp')
+            now = datetime.today().strftime('%Y-%m-%d-%H:%M:%S')
+            os.rename('stats/stats-temp', 'stats/' + now + '-stats')
+            print('\nProfile saved.')
+        else:
+            agent.train()        
+            now = datetime.today().strftime('%Y-%m-%d-%H:%M:%S')
         agent.save_rewards('stats/' + now + '-rewards.csv')
         agent.save_network('models/' + now + '-breakout.h5')
 
