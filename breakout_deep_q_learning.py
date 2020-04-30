@@ -418,6 +418,7 @@ class DeepQAgent():
 
     def save_rewards(self, file_path):
         """Save the list of total rewards."""
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
         with open(file_path, 'w', newline='') as myfile:
             wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
             wr.writerow(self.rewards)
@@ -454,14 +455,14 @@ def main():
         agent.sample()
     else:
         if args.profile:
-            cProfile.runctx('agent.train()', {'agent': agent}, {}, filename='stats/stats-temp')
+            cProfile.runctx('agent.train()', {'agent': agent}, {}, filename='stats/temp-breakout')
             now = datetime.today().strftime('%Y-%m-%d-%H:%M:%S')
-            os.rename('stats/stats-temp', 'stats/' + now + '-stats')
+            os.rename('stats/temp-breakout', 'stats/' + now + '-breakout')
             print('\nProfile saved.')
         else:
             agent.train()        
             now = datetime.today().strftime('%Y-%m-%d-%H:%M:%S')
-        agent.save_rewards('stats/' + now + '-rewards.csv')
+        agent.save_rewards('rewards/' + now + '-breakout.csv')
         agent.save_network('models/' + now + '-breakout.h5')
 
 if __name__ == '__main__':
