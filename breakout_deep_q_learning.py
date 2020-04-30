@@ -1,6 +1,7 @@
 # Inspired by 'Playing Atari with Deep Reinforcement Learning' (https://arxiv.org/abs/1312.5602)
 
 from collections import deque
+from datetime import datetime
 # from gym import wrappers
 import argparse
 import gym
@@ -10,6 +11,7 @@ import pickle
 import random
 import tensorflow as tf
 import time
+import csv
 
 
 class NeuralNetwork():
@@ -128,6 +130,8 @@ class DeepQAgent():
             minibatch_size=self.minibatch_size,
             n_channels = self.nn_input_shape[2]
         )
+        self.mean_reward = deque(maxlen=100)
+        self.rewards = []
 
     def set_seeds(self, seed):
         """Set random seeds using current time."""
@@ -225,10 +229,12 @@ class DeepQAgent():
                 break
             elif done:
                 break
+        self.rewards.append(total_reward)
         self.report(i, episode, total_reward)
         self.sync_networks()
         if (episode + 1) % 100 == 0:
-            self.save_network('models/deep_q_learning-{}.h5'.format(episode))
+            now = datetime.today().strftime('%Y-%m-%d-%H:%M:%S')
+            self.save_network('models/' + now + '-breakout-{}.h5'.format(episode))
         return max_frames
 
     def take_action(self):
@@ -325,13 +331,20 @@ class DeepQAgent():
     def report(self, i, episode, total_reward):
         """Show status on console."""
 
-        print()
-        print('episode    reward    epsilon    time     accum_time    frames    acumm_frames')
+        self.mean_reward.append(total_reward)
 
-        print('{}'.format(episode) + ' '*(len('episode')+4-len(str(episode))), end='')
+        print()
+        print('ep    reward    mean_rew    epsilon    time     accum_time    frames    acumm_frames')
+
+        ep = episode
+        print('{}'.format(ep) + ' '*(len('ep')+4-len(str(ep))), end='')
 
         reward = int(total_reward)
         print('{}'.format(reward) + ' '*(len('reward')+4-len(str(reward))), end='')
+
+        mean_rwd = np.mean(self.mean_reward)
+        mean_rwd = '{:.1f}'.format(mean_rwd)
+        print(mean_rwd + ' '*(len('mean_rew')+4-len(mean_rwd)), end='')
 
         epsilon = self.epsilon
         epsilon = '{:.3f}'.format(epsilon)
@@ -366,32 +379,48 @@ class DeepQAgent():
         self.neural_network.model = tf.keras.models.load_model(network_path)
         print('Neural network loaded.', end='\n\n')
 
-    # def sample(self, n=5):
-    #     """Sample the network."""
-    #     print('Sampling network:')
-    #     for _ in range(n):
-    #         self.run_episode(render=True)
-    #     print()
+    def sample(self, n=5):
+        """Sample the network."""
+        print('Sampling network:')
+        for _ in range(n):
+            self.run_episode(render=True)
+        print()
 
-    # def run_episode(self, render=False):
-    #     """Run one episode for our network."""
-    #     obs = self.env.reset()
-    #     total_reward = 0
-    #     for _ in range(self.max_iterations):
-    #         state = self.preprocess(obs)
-    #         action = self.which_action(state)
-    #         obs, reward, done, _ = self.env.step(action)
-    #         total_reward += reward
-    #         if render:
-    #             self.env.render()
-    #         if done:
-    #             break
-    #     self.env.close()
-    #     print('Reward: ', total_reward)
+    def run_episode(self, render=False):
+        """Run one episode for our network."""
+        total_reward = 0        
+        obs = self.env.reset()
+        state = self.preprocess(obs)[..., np.newaxis]
+        for i in range(self.max_iterations):
+            if i < 3:
+                action = self.env.action_space.sample()
+                obs, reward, done, _ = self.env.step(action)
+                state = np.concatenate((self.preprocess(obs)[..., np.newaxis], state), axis=2)
+            else:
+                action = self.which_action(state / 255)
+                obs, reward, done, _ = self.env.step(action)
+                state = np.concatenate((self.preprocess(obs)[..., np.newaxis], state[..., :3]), axis=2)
+            total_reward += reward
+            if render:
+                self.env.render()
+            if done:
+                break
+            time.sleep(0.01)
+        self.env.close()
+        print('Reward: ', total_reward)
 
-    # def which_action(self, state):
-    #     """Select which is the best action based on the network."""
-    #     return np.argmax(self.compute_values(state))
+    def which_action(self, state):
+        """Select which is the best action based on the network."""
+        if np.random.rand() < self.epsilon_min/10:
+            return self.env.action_space.sample()
+        logits = self.neural_network.model.predict(state[np.newaxis, ...])[0]
+        return np.argmax(logits)
+
+    def save_rewards(self, file_path):
+        """Save the list of total rewards."""
+        with open(file_path, 'w', newline='') as myfile:
+            wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
+            wr.writerow(self.rewards)
 
 def gpu_setup():
     """Config GPU for TensorFlow."""
@@ -407,10 +436,10 @@ def gpu_setup():
             # Memory growth must be set before GPUs have been initialized
             print(e)
 
-def main():    
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--run', action='store_true')
-    parser.add_argument('--gpu', action='store_true')
+def main():
+    parser = argparse.ArgumentParser(description='Train or run Breakout deep Q-learning algorithm.')
+    parser.add_argument('--run', metavar='MODEL_PATH', help='run saved model')
+    parser.add_argument('--gpu', action='store_true', help='limit gpu growth')
     # parser.add_argument('--record', action='store_true')
     args = parser.parse_args()
     # agent = DeepQAgent(args.record)
@@ -418,11 +447,13 @@ def main():
         gpu_setup()
     agent = DeepQAgent(False)
     if args.run:
-        agent.load_network('models/deep_q_learning.h5')
+        agent.load_network(args.run)
         agent.sample()
     else:
         agent.train()
-        agent.save_network('models/deep_q_learning.h5')
+        now = datetime.today().strftime('%Y-%m-%d-%H:%M:%S')
+        agent.save_rewards('stats/' + now + '-rewards.csv')
+        agent.save_network('models/' + now + '-breakout.h5')
 
 if __name__ == '__main__':
     main()
