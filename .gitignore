@@ -24,3 +24,6 @@ Dockerfile
 temp/*
 *hyperparameters
 *.csv
+logs/*
+*.bbl
+*.blg
